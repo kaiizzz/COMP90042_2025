@@ -92,3 +92,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
+
+## TO RUN DO THIS (example):
+# python eval.py --predictions data/train-claims.json --groundtruth data/evidence.json
