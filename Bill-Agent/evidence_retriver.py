@@ -2,68 +2,140 @@
 ### Date: 05/05/2025
 ### Description: This script is used to predict the claim labels and retrieve evidences for a given dataset using a pre-trained model.
 
+import pandas as pd
 import json
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import re
+import nltk
+nltk.download('stopwords')
+nltk.download('wordnet')
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from gensim.models.doc2vec import TaggedDocument
+from gensim.models import Doc2Vec
 import numpy as np
 
-# Load training set
+stop_words = set(stopwords.words('english'))
+
+# Load JSON files
 with open('data/train-claims.json', 'r') as f:
     train_claims = json.load(f)
 
-# Load development set
 with open('data/dev-claims.json', 'r') as f:
     dev_claims = json.load(f)
 
-# Load development baseline set
 with open('data/dev-claims-baseline.json', 'r') as f:
     dev_baseline_claims = json.load(f)
 
-# Load test set
 with open('data/test-claims-unlabelled.json', 'r') as f:
     test_claims = json.load(f)
 
-# Load evidence corpus
 with open('data/evidence.json', 'r') as f:
     evidence = json.load(f)
 
-print(f"Train claims: {len(train_claims)}")
-print(f"Dev claims: {len(dev_claims)}")
-print(f"Dev baseline claims: {len(dev_baseline_claims)}")
-print(f"Test claims: {len(test_claims)}")
-print(f"Evidence passages: {len(evidence)}")
+# Convert to DataFrames
+train_df = pd.DataFrame(train_claims)
+dev_df = pd.DataFrame(dev_claims)
+dev_baseline_df = pd.DataFrame(dev_baseline_claims)
+test_df = pd.DataFrame(test_claims)
+evidence_df = pd.DataFrame(list(evidence.items()), columns=['key', 'value'])
 
-### do TF-IDK vectorization for the evidence corpus
-ev_ids = list(evidence.keys())
-ev_texts = [evidence[ev_id]['text'] for ev_id in ev_ids]
+train_df = pd.DataFrame(train_claims).transpose()
+dev_df = pd.DataFrame(dev_claims).transpose()
+dev_baseline_df = pd.DataFrame(dev_baseline_claims).transpose()
+test_df = pd.DataFrame(test_claims).transpose()
 
-vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
-evidence_tfidf = vectorizer.fit_transform(ev_texts)
+# Display sample
+def display_sample(n=5):
+    print(train_df.head(n))
+    print(dev_df.head(n))
+    print(dev_baseline_df.head(n))
+    print(test_df.head(n))
+    print(evidence_df.head(n))
 
-top_n = 6
+display_sample()
 
-for cid, claim_obj in dev_claims.items():
-    claim_text = claim_obj['claim_text']
-    
-    # Transform the claim into TF-IDF vector
-    claim_tfidf = vectorizer.transform([claim_text])
-    
-    # Compute cosine similarity between claim and all evidence
-    similarities = cosine_similarity(claim_tfidf, evidence_tfidf).flatten()
-    
-    # Get top_k indices
-    top_indices = np.argsort(similarities)[::-1][:top_n]
-    
-    # Get top evidence IDs
-    top_evidence_ids = [ev_ids[idx] for idx in top_indices]
-    
-    # Add to dev_claims for later use
-    dev_claims[cid]['predicted_evidences'] = top_evidence_ids
+############################### PreProcessing ##################################
+# text normalization
+def normalize_text(text):
+    # Convert to lowercase
+    text = text.lower()
+    # Keep only letters, numbers, and spaces
+    text = re.sub(r'[^a-z0-9\s]', '', text)
+    return text
 
-    
-for cid, claim_obj in list(dev_claims.items())[:3]:
-    print(f"Claim: {claim_obj['claim_text']}")
-    print("Top evidence passages:")
-    for eid in claim_obj['predicted_evidences']:
-        print(f"- {evidence[eid]}")
-    print()
+train_df['claim_text'] = train_df['claim_text'].apply(normalize_text)
+dev_df['claim_text'] = dev_df['claim_text'].apply(normalize_text)
+dev_baseline_df['claim_text'] = dev_baseline_df['claim_text'].apply(normalize_text)
+test_df['claim_text'] = test_df['claim_text'].apply(normalize_text)
+
+evidence_df['value'] = evidence_df['value'].apply(normalize_text)
+
+# display_sample()
+
+# remove stop words
+def remove_stopwords(text):
+    words = text.split()
+    filtered_words = [word for word in words if word.lower() not in stop_words]
+    return ' '.join(filtered_words)
+
+train_df['claim_text'] = train_df['claim_text'].apply(remove_stopwords)
+dev_df['claim_text'] = dev_df['claim_text'].apply(remove_stopwords)
+dev_baseline_df['claim_text'] = dev_baseline_df['claim_text'].apply(remove_stopwords)
+test_df['claim_text'] = test_df['claim_text'].apply(remove_stopwords)
+
+evidence_df['value'] = evidence_df['value'].apply(remove_stopwords)
+
+# lemmatization
+lemmatizer = WordNetLemmatizer()
+def lemmatize_text(text):
+    words = text.split()
+    lemmatized_words = [lemmatizer.lemmatize(word) for word in words]
+    return ' '.join(lemmatized_words)
+
+train_df['claim_text'] = train_df['claim_text'].apply(lemmatize_text)
+dev_df['claim_text'] = dev_df['claim_text'].apply(lemmatize_text)
+dev_baseline_df['claim_text'] = dev_baseline_df['claim_text'].apply(lemmatize_text)
+test_df['claim_text'] = test_df['claim_text'].apply(lemmatize_text)
+
+evidence_df['value'] = evidence_df['value'].apply(lemmatize_text)
+
+# text tokenization
+def tokenize_text(text):
+    return text.split(" ")
+
+train_df['claim_text'] = train_df['claim_text'].apply(tokenize_text)
+dev_df['claim_text'] = dev_df['claim_text'].apply(tokenize_text)
+dev_baseline_df['claim_text'] = dev_baseline_df['claim_text'].apply(tokenize_text)
+test_df['claim_text'] = test_df['claim_text'].apply(tokenize_text)
+
+evidence_df['value'] = evidence_df['value'].apply(tokenize_text)
+
+display_sample()
+
+################################# Doc2Vec ##################################
+train_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in train_df.iterrows()]
+dev_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in dev_df.iterrows()]
+dev_baseline_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in dev_baseline_df.iterrows()]
+test_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in test_df.iterrows()]
+
+evidence_tagged = [TaggedDocument(words=row['value'], tags=[row['key']]) for _, row in evidence_df.iterrows()]
+
+model = Doc2Vec(vector_size=100, window=5, min_count=2, workers=4, epochs=40)
+
+all_tagged = train_tagged + dev_tagged + dev_baseline_tagged + test_tagged + evidence_tagged
+
+model.build_vocab(all_tagged)
+
+model.train(all_tagged, total_examples=model.corpus_count, epochs=model.epochs)
+
+# GET VECTORS
+def get_trained_vectors(model, tagged_data):
+    vectors = []
+    for doc in tagged_data:
+        vectors.append(model.dv[doc.tags[0]])
+    return vectors
+
+model.save("doc2vec.model")
+
+train_vectors = get_trained_vectors(model, train_tagged)
+np.save('train_vectors.npy', train_vectors)
