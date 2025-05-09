@@ -112,20 +112,29 @@ evidence_df['value'] = evidence_df['value'].apply(tokenize_text)
 
 display_sample()
 
+## save into csv files
+train_df.to_csv('data/train.csv', index=False)
+dev_df.to_csv('data/dev.csv', index=False)
+dev_baseline_df.to_csv('data/dev_baseline.csv', index=False)
+test_df.to_csv('data/test.csv', index=False)
+evidence_df.to_csv('data/evidence.csv', index=False)
+
 ################################# Doc2Vec ##################################
+# Create TaggedDocument objects
 train_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in train_df.iterrows()]
 dev_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in dev_df.iterrows()]
 dev_baseline_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in dev_baseline_df.iterrows()]
 test_tagged = [TaggedDocument(words=row['claim_text'], tags=[str(i)]) for i, row in test_df.iterrows()]
-
 evidence_tagged = [TaggedDocument(words=row['value'], tags=[row['key']]) for _, row in evidence_df.iterrows()]
 
+# Create Doc2Vec model
 model = Doc2Vec(vector_size=100, window=5, min_count=2, workers=4, epochs=40)
+all_tagged = train_tagged + dev_tagged + dev_baseline_tagged + evidence_tagged
 
-all_tagged = train_tagged + dev_tagged + dev_baseline_tagged + test_tagged + evidence_tagged
-
+# Build vocabulary
 model.build_vocab(all_tagged)
 
+# Train the model
 model.train(all_tagged, total_examples=model.corpus_count, epochs=model.epochs)
 
 # GET VECTORS
@@ -136,6 +145,9 @@ def get_trained_vectors(model, tagged_data):
     return vectors
 
 model.save("doc2vec.model")
-
+test_vectors = [model.infer_vector(doc.words) for doc in test_tagged]
 train_vectors = get_trained_vectors(model, train_tagged)
 np.save('train_vectors.npy', train_vectors)
+np.save('test_vectors.npy', test_vectors)
+
+
