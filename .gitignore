@@ -71,4 +71,10 @@ evidence.json
 *.npy
 *.csv
 
-processed/
+Bill-Agent/
+
+processed/preprocessed_dev_baseline.json
+processed/preprocessed_dev.json
+processed/preprocessed_test.json
+processed/preprocessed_train.json
+processed/preprocessed_evidence.json
