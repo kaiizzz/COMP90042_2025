@@ -60,7 +60,7 @@ print(f"dev_baseline_df: {dev_baseline_df.shape}")
 print(f"test_df: {test_df.shape}")
 print(f"evidence_df: {evidence_df.shape}")
 
-
+print()
 print("Start preprocessing...")
 ############################### PreProcessing ##################################
 # text normalization
@@ -78,7 +78,7 @@ test_df['claim_text'] = test_df['claim_text'].apply(normalize_text)
 
 evidence_df['value'] = evidence_df['value'].apply(normalize_text)
 
-print("Normalized text...")
+print(f"[STEP 1/4] Normalised text!")
 # display_sample() # ----------------------------------------------------------- Debugging
 
 # remove stop words
@@ -93,7 +93,7 @@ dev_baseline_df['claim_text'] = dev_baseline_df['claim_text'].apply(remove_stopw
 test_df['claim_text'] = test_df['claim_text'].apply(remove_stopwords)
 
 evidence_df['value'] = evidence_df['value'].apply(remove_stopwords)
-print("Removed stop words...")
+print(f"[STEP 2/4] Removed stop words!")
 
 # lemmatization
 lemmatizer = WordNetLemmatizer()
@@ -109,7 +109,7 @@ test_df['claim_text'] = test_df['claim_text'].apply(lemmatize_text)
 
 evidence_df['value'] = evidence_df['value'].apply(lemmatize_text)
 
-print("Lemmatized text...")
+print(f"[STEP 3/4] Lemmatized text!")
 
 # text tokenization
 def tokenize_text(text):
@@ -122,7 +122,7 @@ test_df['claim_text'] = test_df['claim_text'].apply(tokenize_text)
 
 evidence_df['value'] = evidence_df['value'].apply(tokenize_text)
 
-print("Tokenized text...")
+print("[STEP 4/4] Tokenized text!")
 
 # display_sample() # ----------------------------------------------------------- Debugging
 
@@ -131,7 +131,13 @@ dev_df.to_json('processed/preprocessed_dev.json', orient='index')
 dev_baseline_df.to_json('processed/preprocessed_dev_baseline.json', orient='index')
 test_df.to_json('processed/preprocessed_test.json', orient='index')
 evidence_df.to_json('processed/preprocessed_evidence.json', orient='records')
-print("Saved preprocessed data to JSON files...")
+print(f"[FINISHED] Saved preprocessed data to JSON files...")
 
 
 print("\nReady for vectorization!")
+
+def return_df():
+    return train_df, dev_df, dev_baseline_df, test_df, evidence_df
+
+def return_original_df():
+    return pd.DataFrame(train_claims), pd.DataFrame(dev_claims), pd.DataFrame(dev_baseline_claims), pd.DataFrame(test_claims), pd.DataFrame(list(evidence.items()), columns=['key', 'value'])
