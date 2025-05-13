@@ -78,3 +78,9 @@ Agent/processed/preprocessed_dev.json
 Agent/processed/preprocessed_test.json
 Agent/processed/preprocessed_train.json
 Agent/processed/preprocessed_evidence.json
+
+Agent/d2v_dev_baseline_df.json
+Agent/d2v_dev_df.json
+Agent/d2v_test_df.json
+Agent/d2v_train_df.json
+Agent/d2v_evidence_df.json
