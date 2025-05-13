@@ -84,3 +84,6 @@ Agent/d2v_dev_df.json
 Agent/d2v_test_df.json
 Agent/d2v_train_df.json
 Agent/d2v_evidence_df.json
+
+# Data files (not already present on GitHub)
+data/
