@@ -87,3 +87,6 @@ Agent/d2v_evidence_df.json
 
 # Data files (not already present on GitHub)
 data/
+
+Agent/sbert_model/
+Agent/output/
