@@ -89,6 +89,8 @@ Agent/d2v_evidence_df.json
 data/
 
 Agent/sbert_model/
+Agent/sbert_model2/
+Agent/sbert_model3/
 Agent/output/
 
 best_model.pth
