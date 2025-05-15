@@ -91,8 +91,6 @@ data/
 best_model.pth
 
 Agent/sbert_model/
-Agent/sbert_model2/
-Agent/sbert_model3/
 Agent/output/
 
 best_model.pth
