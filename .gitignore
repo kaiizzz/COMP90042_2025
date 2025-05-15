@@ -96,3 +96,5 @@ Agent/sbert_model3/
 Agent/output/
 
 best_model.pth
+
+Agent/cross-encoder-finetuned
