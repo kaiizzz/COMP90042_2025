@@ -88,6 +88,8 @@ Agent/d2v_evidence_df.json
 # Data files (not already present on GitHub)
 data/
 
+best_model.pth
+
 Agent/sbert_model/
 Agent/sbert_model2/
 Agent/sbert_model3/
